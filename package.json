@@ -1,6 +1,6 @@
 {
   "name": "nest-keycloak-connect-notos",
-  "version": "1.10.1-ws",
+  "version": "1.10.1-ws.1",
   "description": "keycloak-nodejs-connect module for Nest",
   "author": "John Joshua Ferrer <johnjoshuaferrer@disroot.org>",
   "license": "MIT",

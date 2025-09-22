@@ -55,6 +55,43 @@ export class AuthGuard implements CanActivate {
     private readonly reflector: Reflector,
   ) {}
 
+  async authWsRequest(request: any) {
+    const jwt =
+      this.extractJwtFromCookie(request.cookies) ??
+      this.extractJwt(request.headers);
+    const isJwtEmpty = jwt === null || jwt === undefined;
+
+    // Empty jwt given, immediate return
+    if (isJwtEmpty) {
+      this.logger.verbose('Empty JWT, unauthorized');
+      throwUnauthorized('ws');
+    }
+
+    this.logger.verbose(`User JWT: ${jwt}`);
+
+    const keycloak = await useKeycloak(
+      request,
+      jwt,
+      this.singleTenant,
+      this.multiTenant,
+      this.keycloakOpts,
+    );
+    const isValidToken = await this.validateToken(keycloak, jwt);
+
+    if (isValidToken) {
+      // Attach user info object
+      request.user = parseToken(jwt);
+      // Attach raw access token JWT extracted from bearer/cookie
+      request.accessTokenJWT = jwt;
+
+      this.logger.verbose(
+        `Authenticated User: ${JSON.stringify(request.user)}`,
+      );
+      return true;
+    }
+    throwUnauthorized('ws');
+  }
+
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const isUnprotected = this.reflector.getAllAndOverride<boolean>(
       META_UNPROTECTED,
