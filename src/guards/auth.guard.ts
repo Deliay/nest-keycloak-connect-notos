@@ -1,5 +1,6 @@
 import {
   CanActivate,
+  ContextType,
   ExecutionContext,
   Inject,
   Injectable,
@@ -23,6 +24,18 @@ import {
 import { KeycloakConnectConfig } from '../interface/keycloak-connect-options.interface';
 import { KeycloakMultiTenantService } from '../services/keycloak-multitenant.service';
 import { extractRequest, parseToken, useKeycloak } from '../util';
+import { WsException } from '@nestjs/websockets';
+
+export class WsUnauthorizedException extends WsException {
+  constructor() {
+    super('Not Authorized!');
+  }
+}
+
+function throwUnauthorized(type: ContextType) {
+  if (type === 'ws') throw new WsUnauthorizedException();
+  else throw new UnauthorizedException();
+}
 
 /**
  * An authentication guard. Will return a 401 unauthorized when it is unable to
@@ -81,7 +94,7 @@ export class AuthGuard implements CanActivate {
     // Empty jwt given, immediate return
     if (isJwtEmpty) {
       this.logger.verbose('Empty JWT, unauthorized');
-      throw new UnauthorizedException();
+      throwUnauthorized(context.getType());
     }
 
     this.logger.verbose(`User JWT: ${jwt}`);
@@ -107,7 +120,7 @@ export class AuthGuard implements CanActivate {
       return true;
     }
 
-    throw new UnauthorizedException();
+    throwUnauthorized(context.getType());
   }
 
   private async validateToken(keycloak: KeycloakConnect.Keycloak, jwt: any) {

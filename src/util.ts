@@ -51,6 +51,9 @@ export const extractRequest = (context: ExecutionContext): [any, any] => {
 
     request = gqlContext.req;
     response = gqlContext.res;
+  } else if (context.getType() === 'ws') {
+    const wsContext = context.switchToWs();
+    request = wsContext.getClient().request;
   }
 
   return [request, response];
